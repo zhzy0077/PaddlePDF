@@ -57,6 +57,7 @@ def process_pdf(pdf_doc, output_pdf_path, use_gpu):
             )
     pdf_doc.save(output_pdf_path, garbage=4, deflate=True)
     pdf_doc.close()
+    logging.info(f'Saved file {output_pdf_path!r}.')
 
 def process(input, output, use_gpu):
     kind = filetype.guess(input)
