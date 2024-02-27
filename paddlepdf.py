@@ -103,7 +103,7 @@ if __name__ == "__main__":
     if args.watch:
         logging.info(f'start watching directory {args.input_file!r}')
         event_handler = Handler(args.output_file, args.use_gpu)
-        observer = PollingObserver(timeout=10)
+        observer = PollingObserver(timeout=60)
         observer.schedule(event_handler, args.input_file, recursive=True)
         observer.start()
         try:
