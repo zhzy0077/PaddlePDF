@@ -87,7 +87,7 @@ class Handler(FileSystemEventHandler):
     def on_moved(self, event):
         logging.info(f'Detected file {event.dest_path!r}.')
         file = Path(event.dest_path).stem;
-        process(event.src_path, self._output + "/" + file + ".pdf", self._gpu)
+        process(event.dest_path, self._output + "/" + file + ".pdf", self._gpu)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
