@@ -5,4 +5,4 @@ RUN pip install "filetype"
 
 COPY ./paddlepdf.py /paddlepdf.py
 
-ENTRYPOINT bash
+ENTRYPOINT ["/usr/bin/python", "/paddlepdf.py"]
