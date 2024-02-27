@@ -7,8 +7,14 @@ from paddleocr import PaddleOCR
 import logging
 import argparse
 import filetype
+import os
+from pathlib import Path
+from watchdog.observers.polling import PollingObserver
+from watchdog.events import FileSystemEventHandler
+import time
 
 logging.disable(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 
 def process_pdf(pdf_doc, output_pdf_path, use_gpu):
     ocr = PaddleOCR(use_angle_cls=True, lang="ch", use_gpu=use_gpu)
@@ -66,6 +72,22 @@ def process(input, output, use_gpu):
     else:
         raise ValueError("Unsupported file type")
 
+class Handler(FileSystemEventHandler):
+    def __init__(self, output, use_gpu) -> None:
+        super().__init__()
+        self._output = output
+        self._gpu = use_gpu
+
+    def on_created(self, event):
+        logging.info(f'Detected file {event.src_path!r}.')
+        file = Path(event.src_path).stem;
+        process(event.src_path, self._output + "/" + file + ".pdf", self._gpu)
+
+    def on_moved(self, event):
+        logging.info(f'Detected file {event.dest_path!r}.')
+        file = Path(event.dest_path).stem;
+        process(event.src_path, self._output + "/" + file + ".pdf", self._gpu)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="A program than adds hidden(but copiable) text layer to image pdf.",
@@ -74,5 +96,20 @@ if __name__ == "__main__":
     parser.add_argument("input_file", help="Input PDF/Image file")
     parser.add_argument("output_file", help="Output PDF file")
     parser.add_argument("--use_gpu", help="Use GPU", default=True, type=bool)
+    parser.add_argument("--watch", action='store_true', help="Watch input_file as a folder", default=False)
     args = parser.parse_args()
+
+    if args.watch:
+        logging.info(f'start watching directory {args.input_file!r}')
+        event_handler = Handler(args.output_file, args.use_gpu)
+        observer = PollingObserver(timeout=10)
+        observer.schedule(event_handler, args.input_file, recursive=True)
+        observer.start()
+        try:
+            while True:
+                time.sleep(1)
+        finally:
+            observer.stop()
+            observer.join()
+
     process(args.input_file, args.output_file, args.use_gpu)
